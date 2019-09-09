@@ -8,6 +8,7 @@
 #include "display.h"
 #include "main.h"
 #include "task.h"
+#include "spi.h"
 #include "definitions.h"
 
 // the memory buffer for the LCD
@@ -81,8 +82,6 @@ static uint8_t buffer[DISPLAY_BUFFER_LENGTH] = {
 #endif
 #endif
 };
-
-extern SPI_HandleTypeDef hspi2;
 
 void init_display(uint8_t ext_vcc, uint8_t reset)
 {
@@ -168,7 +167,7 @@ void ssd1306_command(uint8_t cmd)
   HAL_GPIO_WritePin(DISPLAY_CS_GPIO_Port, DISPLAY_CS_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(DISPLAY_DC_GPIO_Port, DISPLAY_DC_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(DISPLAY_CS_GPIO_Port, DISPLAY_CS_Pin, GPIO_PIN_RESET);
-  HAL_SPI_Transmit(&hspi2, &cmd, 1, 0xFFFFFF);
+  HAL_SPI_Transmit(&hspi3, &cmd, 1, 0xFFFFFF);
   HAL_GPIO_WritePin(DISPLAY_CS_GPIO_Port, DISPLAY_CS_Pin, GPIO_PIN_SET);
 }
 
@@ -291,6 +290,6 @@ void display(void)
   HAL_GPIO_WritePin(DISPLAY_DC_GPIO_Port, DISPLAY_DC_Pin, GPIO_PIN_SET);
 
   HAL_GPIO_WritePin(DISPLAY_CS_GPIO_Port, DISPLAY_CS_Pin, GPIO_PIN_RESET);
-  HAL_SPI_Transmit(&hspi2, buffer, (SSD1306_LCDWIDTH * SSD1306_LCDHEIGHT / 8), 0xFFFFFF);
+  HAL_SPI_Transmit(&hspi3, buffer, (SSD1306_LCDWIDTH * SSD1306_LCDHEIGHT / 8), 0xFFFFFF);
   HAL_GPIO_WritePin(DISPLAY_CS_GPIO_Port, DISPLAY_CS_Pin, GPIO_PIN_SET);
 }

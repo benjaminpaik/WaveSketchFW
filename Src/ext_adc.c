@@ -50,7 +50,7 @@ void read_ext_adc(EXT_ADC *ext_adc)
   ext_adc->tx_buffer[0] = ext_adc->config.all;
   ext_adc->tx_buffer[1] = ext_adc->config.all;
 
-  HAL_SPI_TransmitReceive(&hspi3, (uint8_t*)ext_adc->tx_buffer, (uint8_t*)ext_adc->rx_buffer, 2, 0xFFFFFF);
+  HAL_SPI_TransmitReceive(&hspi2, (uint8_t*)ext_adc->tx_buffer, (uint8_t*)ext_adc->rx_buffer, 2, 0xFFFFFF);
 
   // store the latest ADC result
   ext_adc->results[ext_adc->result_index] = ext_adc->rx_buffer[0];

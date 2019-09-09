@@ -326,9 +326,8 @@ void AdcTask(void const * argument)
 
 //    dac_i2c_data[1] = (dac_value >> 8);
 //    dac_i2c_data[2] = (dac_value & 0xFF);
-//    HAL_I2C_Master_Transmit(&hi2c1, DAC_I2C_WRITE, dac_i2c_data, 3, 1000);
+//    HAL_I2C_Master_Transmit(&hi2c3, DAC_I2C_WRITE, dac_i2c_data, 3, 1000);
 //    HAL_I2C_Master_Transmit_DMA(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size);
-
 //    dac_value += 128;
   }
   /* USER CODE END AdcTask */

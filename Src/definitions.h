@@ -19,7 +19,7 @@
 
 #define DEBOUNCE_THRESHOLD      2
 
-#define ADC_SAMPLE_RATE     50
+#define ADC_SAMPLE_RATE         50
 #define COARSE_CUTOFF           10
 #define FINE_CUTOFF             10
 #define CV_CUTOFF               10
