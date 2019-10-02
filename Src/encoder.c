@@ -17,14 +17,17 @@ void init_encoder(ENCODER *encoder, GPIO_TypeDef *port_a, uint16_t pin_a, GPIO_T
   encoder->port_b = port_b;
   encoder->pin_b = pin_b;
 
-  encoder->upper_limit = upper_limit << ENCODER_SENSITIVITY;
-  encoder->lower_limit = lower_limit << ENCODER_SENSITIVITY;
+  encoder->upper_limit = upper_limit;
+  encoder->lower_limit = lower_limit;
+  encoder->integrator_upper_limit = upper_limit << ENCODER_SENSITIVITY;
+  encoder->integrator_lower_limit = lower_limit << ENCODER_SENSITIVITY;
   encoder->sensitivity = ENCODER_SENSITIVITY;
 }
 
 void preset_encoder(ENCODER *encoder, int16_t position)
 {
-  encoder->integrator = position << encoder->sensitivity;
+  encoder->position = LIMIT(position, encoder->upper_limit, encoder->lower_limit);
+  encoder->integrator = encoder->position << encoder->sensitivity;
 }
 
 void update_encoder(ENCODER *encoder)
@@ -48,7 +51,7 @@ void update_encoder(ENCODER *encoder)
   if(encoder->delta > 0) encoder->integrator++;
   else if(encoder->delta < 0) encoder->integrator--;
   // set upper and lower integrator limits
-  encoder->integrator = LIMIT(encoder->integrator, encoder->upper_limit, encoder->lower_limit);
+  encoder->integrator = LIMIT(encoder->integrator, encoder->integrator_upper_limit, encoder->integrator_lower_limit);
   // scale down the encoder position
   encoder->position = encoder->integrator >> encoder->sensitivity;
   // store the previous state

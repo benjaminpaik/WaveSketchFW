@@ -23,6 +23,8 @@ typedef struct {
   uint8_t sensitivity;
   int16_t upper_limit;
   int16_t lower_limit;
+  int16_t integrator_upper_limit;
+  int16_t integrator_lower_limit;
   uint16_t pin_a;
   uint16_t pin_b;
 } ENCODER;

@@ -18,12 +18,20 @@
 #define FINE_SCALAR             0.002F
 
 #define DEBOUNCE_THRESHOLD      2
+#define DISCONNECT_THRESHOLD    300
 
 #define ADC_SAMPLE_RATE         50
 #define COARSE_CUTOFF           10
 #define FINE_CUTOFF             10
 #define CV_CUTOFF               10
 
+#define LFO_INPUT_UPPER         3070
+#define LFO_INPUT_LOWER         1023
+#define LFO_INPUT_RANGE         (LFO_INPUT_UPPER - LFO_INPUT_LOWER)
+#define SCALE_LFO_INPUT(X)      ((float_t)(LFO_INPUT_UPPER - (X)) / LFO_INPUT_RANGE)
+
+#define ADC_X_INDEX             0
+#define ADC_Y_INDEX             1
 #define ADC_CV_INDEX            2
 #define ADC_COARSE_INDEX        3
 #define ADC_FINE_INDEX          4

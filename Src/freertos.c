@@ -73,22 +73,24 @@ osThreadId defaultTaskHandle;
 osThreadId displayTaskHandle;
 osThreadId encoderTaskHandle;
 osThreadId ledTaskHandle;
-osThreadId adcTaskHandle;
+osThreadId pitchTaskHandle;
 osThreadId buttonTaskHandle;
+osThreadId lfoControlTaskHandle;
 osSemaphoreId displaySemaphoreHandle;
 osSemaphoreId encoderSemaphoreHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-   
+void draw_sample(void);
 /* USER CODE END FunctionPrototypes */
 
 void DefaultTask(void const * argument);
 void DisplayTask(void const * argument);
 void EncoderTask(void const * argument);
 void LedTask(void const * argument);
-void AdcTask(void const * argument);
+void PitchTask(void const * argument);
 void ButtonTask(void const * argument);
+void LfoControlTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -144,13 +146,17 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(ledTask, LedTask, osPriorityLow, 0, 128);
   ledTaskHandle = osThreadCreate(osThread(ledTask), NULL);
 
-  /* definition and creation of adcTask */
-  osThreadDef(adcTask, AdcTask, osPriorityHigh, 0, 128);
-  adcTaskHandle = osThreadCreate(osThread(adcTask), NULL);
+  /* definition and creation of pitchTask */
+  osThreadDef(pitchTask, PitchTask, osPriorityHigh, 0, 128);
+  pitchTaskHandle = osThreadCreate(osThread(pitchTask), NULL);
 
   /* definition and creation of buttonTask */
   osThreadDef(buttonTask, ButtonTask, osPriorityBelowNormal, 0, 128);
   buttonTaskHandle = osThreadCreate(osThread(buttonTask), NULL);
+
+  /* definition and creation of lfoControlTask */
+  osThreadDef(lfoControlTask, LfoControlTask, osPriorityBelowNormal, 0, 128);
+  lfoControlTaskHandle = osThreadCreate(osThread(lfoControlTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -167,19 +173,11 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_DefaultTask */
 void DefaultTask(void const * argument)
 {
-    
-    
-    
-    
-    
-    
-    
-
   /* USER CODE BEGIN DefaultTask */
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(10);
   }
   /* USER CODE END DefaultTask */
 }
@@ -236,28 +234,7 @@ void EncoderTask(void const * argument)
     // check both encoders for updated data
     update_encoder(&encoder_x);
     update_encoder(&encoder_y);
-    // update the waveform
-    wf.display[encoder_x.position] = encoder_y.position;
-    wf.audio[encoder_x.position] = AUDIO_SCALING(encoder_y.position);
-    // clear the current and adjacent columns
-    draw_vline(encoder_x.position, MAX_HEIGHT, 0, BLACK);
-    draw_vline(encoder_x.position + 1, MAX_HEIGHT, 0, BLACK);
-
-    // draw current vertical line
-    if(encoder_x.position > 0) {
-      // standard case
-      draw_vline(encoder_x.position, encoder_y.position, wf.display[encoder_x.position - 1], WHITE);
-    }
-    else {
-      // left screen edge case
-      draw_pixel(encoder_x.position, encoder_y.position, WHITE);
-    }
-
-    // draw adjacent vertical line
-    if(encoder_x.position < MAX_WIDTH) {
-      draw_vline(encoder_x.position + 1, encoder_y.position, wf.display[encoder_x.position + 1], WHITE);
-    }
-    // give the semaphore to the display task
+    draw_sample();
     xSemaphoreGive(displaySemaphoreHandle);
   }
   /* USER CODE END EncoderTask */
@@ -289,16 +266,16 @@ void LedTask(void const * argument)
   /* USER CODE END LedTask */
 }
 
-/* USER CODE BEGIN Header_AdcTask */
+/* USER CODE BEGIN Header_PitchTask */
 /**
-* @brief Function implementing the adcTask thread.
+* @brief Function implementing the pitchTask thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_AdcTask */
-void AdcTask(void const * argument)
+/* USER CODE END Header_PitchTask */
+void PitchTask(void const * argument)
 {
-  /* USER CODE BEGIN AdcTask */
+  /* USER CODE BEGIN PitchTask */
   TickType_t xLastWakeTime;
   float_t pitch_cmd;
 //  uint16_t dac_value = 0;
@@ -321,8 +298,6 @@ void AdcTask(void const * argument)
     lowpass_filter(&note_filter, pitch_cmd);
     exp_cmd(&freq_cmd, note_filter.out);
     update_frequency(&wf, freq_cmd.out);
-    // initiate a new ADC conversion sequence
-    HAL_ADC_Start_DMA(&hadc1, g_adc_inputs, ARRAY_SIZE(g_adc_inputs));
 
 //    dac_i2c_data[1] = (dac_value >> 8);
 //    dac_i2c_data[2] = (dac_value & 0xFF);
@@ -330,7 +305,7 @@ void AdcTask(void const * argument)
 //    HAL_I2C_Master_Transmit_DMA(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size);
 //    dac_value += 128;
   }
-  /* USER CODE END AdcTask */
+  /* USER CODE END PitchTask */
 }
 
 /* USER CODE BEGIN Header_ButtonTask */
@@ -343,17 +318,15 @@ void AdcTask(void const * argument)
 void ButtonTask(void const * argument)
 {
   /* USER CODE BEGIN ButtonTask */
-  TickType_t xLastWakeTime;
   init_button(&x_button, DEBOUNCE_THRESHOLD, 0, SWITCH_X_GPIO_Port, SWITCH_X_Pin);
   init_button(&y_button, DEBOUNCE_THRESHOLD, 0, SWITCH_Y_GPIO_Port, SWITCH_Y_Pin);
   init_button(&left_button, DEBOUNCE_THRESHOLD, 1, SWITCH_L_GPIO_Port, SWITCH_L_Pin);
   init_button(&right_button, DEBOUNCE_THRESHOLD, 1, SWITCH_R_GPIO_Port, SWITCH_R_Pin);
-  xLastWakeTime = xTaskGetTickCount();
 
   /* Infinite loop */
   for(;;)
   {
-    vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
+    vTaskDelay(pdMS_TO_TICKS(10));
     button_debouce(&x_button);
     button_debouce(&y_button);
     button_debouce(&left_button);
@@ -362,9 +335,68 @@ void ButtonTask(void const * argument)
   /* USER CODE END ButtonTask */
 }
 
+/* USER CODE BEGIN Header_LfoControlTask */
+/**
+* @brief Function implementing the lfoControlTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_LfoControlTask */
+void LfoControlTask(void const * argument)
+{
+  /* USER CODE BEGIN LfoControlTask */
+  vTaskDelay(pdMS_TO_TICKS(100));
+
+  /* Infinite loop */
+  for(;;)
+  {
+    // initiate a new ADC conversion sequence
+    HAL_ADC_Start_DMA(&hadc1, g_adc_inputs, ARRAY_SIZE(g_adc_inputs));
+    vTaskDelay(pdMS_TO_TICKS(1));
+    // at least one of the LFO inputs is connected
+    if(g_adc_inputs[ADC_X_INDEX] > DISCONNECT_THRESHOLD ||
+       g_adc_inputs[ADC_Y_INDEX] > DISCONNECT_THRESHOLD) {
+      // X input connected
+      if(g_adc_inputs[ADC_X_INDEX] > DISCONNECT_THRESHOLD) {
+        preset_encoder(&encoder_x, SCALE_LFO_INPUT(g_adc_inputs[ADC_X_INDEX]) * MAX_WIDTH);
+      }
+      // Y input connected
+      if(g_adc_inputs[ADC_Y_INDEX] > DISCONNECT_THRESHOLD) {
+        preset_encoder(&encoder_y, SCALE_LFO_INPUT(g_adc_inputs[ADC_Y_INDEX]) * MAX_HEIGHT);
+      }
+      draw_sample();
+      xSemaphoreGive(displaySemaphoreHandle);
+    }
+  }
+  /* USER CODE END LfoControlTask */
+}
+
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-     
+void draw_sample(void)
+{
+  // update the waveform
+  wf.display[encoder_x.position] = encoder_y.position;
+  wf.audio[encoder_x.position] = AUDIO_SCALING(encoder_y.position);
+  // clear the current and adjacent columns
+  draw_vline(encoder_x.position, MAX_HEIGHT, 0, BLACK);
+  draw_vline(encoder_x.position + 1, MAX_HEIGHT, 0, BLACK);
+
+  // draw current vertical line
+  if(encoder_x.position > 0) {
+    // standard case
+    draw_vline(encoder_x.position, encoder_y.position, wf.display[encoder_x.position - 1], WHITE);
+  }
+  else {
+    // left screen edge case
+    draw_pixel(encoder_x.position, encoder_y.position, WHITE);
+  }
+
+  // draw adjacent vertical line
+  if(encoder_x.position < MAX_WIDTH) {
+    draw_vline(encoder_x.position + 1, encoder_y.position, wf.display[encoder_x.position + 1], WHITE);
+  }
+}
 /* USER CODE END Application */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
