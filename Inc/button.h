@@ -23,6 +23,8 @@ typedef struct {
     uint8_t current;
     uint8_t previous;
     uint8_t out;
+    uint8_t out_previous;
+    uint8_t event;
 } BUTTON;
 
 void init_button(BUTTON *button, uint16_t threshold, uint8_t polarity, GPIO_TypeDef *port, uint16_t pin);

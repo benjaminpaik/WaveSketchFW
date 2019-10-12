@@ -14,9 +14,9 @@ void init_button(BUTTON *button, uint16_t threshold, uint8_t polarity, GPIO_Type
   button->port = port;
   button->pin = pin;
 
-  button->out = HAL_GPIO_ReadPin(port, pin);
-  button->current = button->out;
-  button->previous = button->out;
+  button->out = 0;
+  button->current = 0;
+  button->previous = 0;
   button->count = 0;
   button->presses = 0;
 }
@@ -36,5 +36,7 @@ void button_debouce(BUTTON *button)
       button->out = (button->polarity ? button->current : !button->current);
     }
   }
+  button->event = (button->out && !button->out_previous);
+  button->out_previous = button->out;
   button->previous = button->current;
 }

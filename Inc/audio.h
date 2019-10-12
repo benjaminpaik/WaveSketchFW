@@ -20,6 +20,7 @@ typedef struct {
 
   int16_t num_samples;
   volatile int16_t index;
+  int16_t selection;
 } WAVEFORM;
 
 #define MAX_FREQUENCY     9000.0
@@ -31,5 +32,6 @@ typedef struct {
 void init_waveform(WAVEFORM *wf, int16_t max_range, int16_t num_samples, int16_t init);
 void update_frequency(WAVEFORM *wf, float freq);
 void update_sample(WAVEFORM *wf);
+void select_waveform(WAVEFORM *wf, int16_t shift);
 
 #endif /* AUDIO_H_ */

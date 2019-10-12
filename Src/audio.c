@@ -17,6 +17,7 @@ void init_waveform(WAVEFORM *wf, int16_t max_range, int16_t num_samples, int16_t
 
   wf->num_samples = num_samples;
   wf->index = 0;
+  wf->selection = 0;
   // initialize the waveform
   for(i = 0; i < end; i++) {
     wf->display[i] = init;
@@ -41,3 +42,8 @@ void update_sample(WAVEFORM *wf)
   wf->index = (int16_t)((wf->cycle_time / wf->period) * wf->num_samples);
 }
 
+void select_waveform(WAVEFORM *wf, int16_t shift)
+{
+  wf->selection += shift;
+  wf->selection &= 0x3;
+}

@@ -37,6 +37,7 @@
 #include "semphr.h"
 #include "dsp.h"
 #include "ext_adc.h"
+#include "eeprom.h"
 #include "definitions.h"
 /* USER CODE END Includes */
 
@@ -82,6 +83,9 @@ osSemaphoreId encoderSemaphoreHandle;
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 void draw_sample(void);
+void draw_waveform(void);
+void save_waveform(uint16_t memory_bank);
+void load_waveform(uint16_t memory_bank);
 /* USER CODE END FunctionPrototypes */
 
 void DefaultTask(void const * argument);
@@ -101,7 +105,6 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-       
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -196,6 +199,7 @@ void DisplayTask(void const * argument)
   init_display(0, 1);
   clear_screen();
   draw_hline((SSD1306_LCDHEIGHT >> 1), MAX_WIDTH, 0, WHITE);
+  load_waveform(wf.selection);
   init_waveform(&wf, SSD1306_LCDHEIGHT, SSD1306_LCDWIDTH, (SSD1306_LCDHEIGHT / 2));
 
   /* Infinite loop */
@@ -226,7 +230,7 @@ void EncoderTask(void const * argument)
   init_encoder(&encoder_y, ENCODER_Y2_GPIO_Port, ENCODER_Y2_Pin, ENCODER_Y1_GPIO_Port, ENCODER_Y1_Pin, MAX_HEIGHT, 0);
   // initialize encoder positions
   preset_encoder(&encoder_x, 0);
-  preset_encoder(&encoder_y, (SSD1306_LCDHEIGHT >> 1));
+  preset_encoder(&encoder_y, (SSD1306_LCDHEIGHT / 2));
 
   /* Infinite loop */
   for(;;) {
@@ -320,8 +324,8 @@ void ButtonTask(void const * argument)
   /* USER CODE BEGIN ButtonTask */
   init_button(&x_button, DEBOUNCE_THRESHOLD, 0, SWITCH_X_GPIO_Port, SWITCH_X_Pin);
   init_button(&y_button, DEBOUNCE_THRESHOLD, 0, SWITCH_Y_GPIO_Port, SWITCH_Y_Pin);
-  init_button(&left_button, DEBOUNCE_THRESHOLD, 1, SWITCH_L_GPIO_Port, SWITCH_L_Pin);
-  init_button(&right_button, DEBOUNCE_THRESHOLD, 1, SWITCH_R_GPIO_Port, SWITCH_R_Pin);
+  init_button(&left_button, DEBOUNCE_THRESHOLD, 0, SWITCH_L_GPIO_Port, SWITCH_L_Pin);
+  init_button(&right_button, DEBOUNCE_THRESHOLD, 0, SWITCH_R_GPIO_Port, SWITCH_R_Pin);
 
   /* Infinite loop */
   for(;;)
@@ -331,6 +335,22 @@ void ButtonTask(void const * argument)
     button_debouce(&y_button);
     button_debouce(&left_button);
     button_debouce(&right_button);
+
+    if(right_button.event) {
+      save_waveform(wf.selection);
+    }
+    else if(left_button.event) {
+      init_waveform(&wf, SSD1306_LCDHEIGHT, SSD1306_LCDWIDTH, (SSD1306_LCDHEIGHT / 2));
+      draw_waveform();
+    }
+    else if(x_button.event) {
+      select_waveform(&wf, -1);
+      load_waveform(wf.selection);
+    }
+    else if(y_button.event) {
+      select_waveform(&wf, 1);
+      load_waveform(wf.selection);
+    }
   }
   /* USER CODE END ButtonTask */
 }
@@ -396,6 +416,58 @@ void draw_sample(void)
   if(encoder_x.position < MAX_WIDTH) {
     draw_vline(encoder_x.position + 1, encoder_y.position, wf.display[encoder_x.position + 1], WHITE);
   }
+}
+
+void draw_waveform(void)
+{
+  uint16_t i = 0;
+  clear_screen();
+  // left screen edge case
+  draw_pixel(0, wf.display[0], WHITE);
+  // draw remaining lines to generate the waveform
+  for(i = 1; i < SSD1306_LCDWIDTH; i++) {
+    draw_vline(i, wf.display[i], wf.display[i - 1], WHITE);
+  }
+  xSemaphoreGive(displaySemaphoreHandle);
+}
+
+void save_waveform(uint16_t memory_bank)
+{
+  uint16_t i = 0, wf_index = 0, start = 0, end = 0;
+  memory_bank = (memory_bank < NUM_WAVEFORMS) ? memory_bank : (NUM_WAVEFORMS - 1);
+  start = (memory_bank * SSD1306_LCDWIDTH);
+  end = start + SSD1306_LCDWIDTH;
+
+  for(i = start; i < end; i++) {
+    EE_WriteVariable(i, (uint16_t)wf.display[wf_index]);
+    wf_index++;
+  }
+}
+
+void load_waveform(uint16_t memory_bank)
+{
+  uint16_t i = 0, wf_index = 0, start = 0, end = 0, fault = 0;
+  memory_bank = (memory_bank < NUM_WAVEFORMS) ? memory_bank : (NUM_WAVEFORMS - 1);
+  start = (memory_bank * SSD1306_LCDWIDTH);
+  end = start + SSD1306_LCDWIDTH;
+
+  for(i = start; i < end; i++) {
+    if(fault) {
+      for(wf_index = 0; wf_index < SSD1306_LCDWIDTH; wf_index++) {
+        wf.display[wf_index] = SSD1306_LCDHEIGHT / 2;
+        wf.audio[wf_index] = AUDIO_SCALING(wf.display[wf_index]);
+      }
+      break;
+    }
+    else {
+      fault = (EE_ReadVariable(i, (uint16_t *)&wf.display[wf_index]) != HAL_OK);
+      wf.audio[wf_index] = AUDIO_SCALING(wf.display[wf_index]);
+    }
+    wf_index++;
+  }
+  preset_encoder(&encoder_x, 0);
+  preset_encoder(&encoder_y, wf.display[0]);
+  draw_waveform();
 }
 /* USER CODE END Application */
 

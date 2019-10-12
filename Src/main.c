@@ -37,6 +37,7 @@
 #include "control.h"
 #include "button.h"
 #include "semphr.h"
+#include "eeprom.h"
 #include "definitions.h"
 /* USER CODE END Includes */
 
@@ -96,7 +97,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  HAL_FLASH_Unlock();
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -109,6 +110,9 @@ int main(void)
   MX_TIM2_Init();
   MX_I2C3_Init();
   /* USER CODE BEGIN 2 */
+  if(EE_Init() != EE_OK) {
+    Error_Handler();
+  }
   HAL_TIM_Base_Start_IT(&htim2);
   HAL_DAC_Start(&hdac, DAC_CHANNEL_2);
   HAL_ADC_Start(&hadc1);

@@ -10,6 +10,9 @@
 
 #include "stm32f4xx_hal.h"
 
+#define EEPROM_SIZE             (128 * 4)
+#define NUM_WAVEFORMS           4
+
 #define FREQ_BASE               2.0F
 #define FREQ_CONST_A            1.0594631F
 
@@ -17,7 +20,7 @@
 #define COARSE_SCALAR           0.003F
 #define FINE_SCALAR             0.002F
 
-#define DEBOUNCE_THRESHOLD      2
+#define DEBOUNCE_THRESHOLD      4
 #define DISCONNECT_THRESHOLD    300
 
 #define ADC_SAMPLE_RATE         50
