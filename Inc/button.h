@@ -18,16 +18,25 @@ typedef struct {
     uint8_t polarity;
     uint16_t threshold;
     uint16_t count;
-    uint16_t presses;
 
     uint8_t current;
     uint8_t previous;
     uint8_t out;
     uint8_t out_previous;
-    uint8_t event;
+    uint8_t press;
+    uint8_t release;
+
+    uint16_t hold_threshold;
+    uint16_t hold_count;
+    uint8_t hold;
+    uint8_t hold_previous;
 } BUTTON;
 
+#define HOLD_DISABLED     3
+
 void init_button(BUTTON *button, uint16_t threshold, uint8_t polarity, GPIO_TypeDef *port, uint16_t pin);
+void init_button_hold(BUTTON *button, uint16_t hold_threshold);
 void button_debouce(BUTTON *button);
+void button_hold(BUTTON *button);
 
 #endif /* BUTTON_H_ */

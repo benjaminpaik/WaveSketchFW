@@ -197,10 +197,8 @@ void DisplayTask(void const * argument)
   /* USER CODE BEGIN DisplayTask */
   // initialize the OLED display
   init_display(0, 1);
-  clear_screen();
-  draw_hline((SSD1306_LCDHEIGHT >> 1), MAX_WIDTH, 0, WHITE);
+  init_waveform(&wf, SSD1306_LCDWIDTH);
   load_waveform(wf.selection);
-  init_waveform(&wf, SSD1306_LCDHEIGHT, SSD1306_LCDWIDTH, (SSD1306_LCDHEIGHT / 2));
 
   /* Infinite loop */
   for(;;) {
@@ -327,6 +325,9 @@ void ButtonTask(void const * argument)
   init_button(&left_button, DEBOUNCE_THRESHOLD, 0, SWITCH_L_GPIO_Port, SWITCH_L_Pin);
   init_button(&right_button, DEBOUNCE_THRESHOLD, 0, SWITCH_R_GPIO_Port, SWITCH_R_Pin);
 
+  init_button_hold(&left_button, HOLD_THRESHOLD);
+  init_button_hold(&right_button, HOLD_THRESHOLD);
+
   /* Infinite loop */
   for(;;)
   {
@@ -336,18 +337,18 @@ void ButtonTask(void const * argument)
     button_debouce(&left_button);
     button_debouce(&right_button);
 
-    if(right_button.event) {
+    if(right_button.release) {
       save_waveform(wf.selection);
     }
-    else if(left_button.event) {
-      init_waveform(&wf, SSD1306_LCDHEIGHT, SSD1306_LCDWIDTH, (SSD1306_LCDHEIGHT / 2));
+    else if(left_button.release) {
+      reset_waveform(&wf, (SSD1306_LCDHEIGHT / 2));
       draw_waveform();
     }
-    else if(x_button.event) {
+    else if(x_button.press) {
       select_waveform(&wf, -1);
       load_waveform(wf.selection);
     }
-    else if(y_button.event) {
+    else if(y_button.press) {
       select_waveform(&wf, 1);
       load_waveform(wf.selection);
     }
@@ -378,11 +379,13 @@ void LfoControlTask(void const * argument)
        g_adc_inputs[ADC_Y_INDEX] > DISCONNECT_THRESHOLD) {
       // X input connected
       if(g_adc_inputs[ADC_X_INDEX] > DISCONNECT_THRESHOLD) {
-        preset_encoder(&encoder_x, SCALE_LFO_INPUT(g_adc_inputs[ADC_X_INDEX]) * MAX_WIDTH);
+        lfo_x_cal_sequence(&wf, g_adc_inputs[ADC_X_INDEX], left_button.hold);
+        preset_encoder(&encoder_x, scale_lfo_x_input(&wf, g_adc_inputs[ADC_X_INDEX]) * MAX_WIDTH);
       }
       // Y input connected
       if(g_adc_inputs[ADC_Y_INDEX] > DISCONNECT_THRESHOLD) {
-        preset_encoder(&encoder_y, SCALE_LFO_INPUT(g_adc_inputs[ADC_Y_INDEX]) * MAX_HEIGHT);
+        lfo_y_cal_sequence(&wf, g_adc_inputs[ADC_Y_INDEX], left_button.hold);
+        preset_encoder(&encoder_y, scale_lfo_y_input(&wf, g_adc_inputs[ADC_Y_INDEX]) * MAX_HEIGHT);
       }
       draw_sample();
       xSemaphoreGive(displaySemaphoreHandle);

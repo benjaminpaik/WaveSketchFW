@@ -7,21 +7,29 @@
 
 #include "audio.h"
 
-void init_waveform(WAVEFORM *wf, int16_t max_range, int16_t num_samples, int16_t init)
+void init_waveform(WAVEFORM *wf, int16_t num_samples)
 {
-  int16_t i = 0;
-  int16_t end = sizeof(wf->display) / sizeof(wf->display[0]);
-
   wf->cycle_time = 0;
   wf->period = 1.0 / MIN_FREQUENCY;
 
   wf->num_samples = num_samples;
   wf->index = 0;
   wf->selection = 0;
-  // initialize the waveform
-  for(i = 0; i < end; i++) {
-    wf->display[i] = init;
-    wf->audio[i] = (max_range - init - 1) * max_range;
+
+  wf->lfo_x_upper_limit = LFO_INPUT_UPPER;
+  wf->lfo_x_lower_limit = LFO_INPUT_LOWER;
+  wf->lfo_y_upper_limit = LFO_INPUT_UPPER;
+  wf->lfo_y_lower_limit = LFO_INPUT_LOWER;
+  wf->lfo_x_cal_flag = 0;
+  wf->lfo_y_cal_flag = 0;
+}
+
+void reset_waveform(WAVEFORM *wf, int16_t value)
+{
+  uint16_t i = 0;
+  for(i = 0; i < wf->num_samples; i++) {
+    wf->display[i] = value;
+    wf->audio[i] = AUDIO_SCALING(value);
   }
 }
 
@@ -46,4 +54,58 @@ void select_waveform(WAVEFORM *wf, int16_t shift)
 {
   wf->selection += shift;
   wf->selection &= 0x3;
+}
+
+float_t scale_lfo_x_input(WAVEFORM *wf, uint32_t input)
+{
+  return (float_t)(wf->lfo_x_upper_limit - input) / (wf->lfo_x_upper_limit - wf->lfo_x_lower_limit);
+}
+
+float_t scale_lfo_y_input(WAVEFORM *wf, uint32_t input)
+{
+  return (float_t)(wf->lfo_y_upper_limit - input) / (wf->lfo_y_upper_limit - wf->lfo_y_lower_limit);
+}
+
+void lfo_x_cal_sequence(WAVEFORM *wf, uint32_t lfo_input, uint8_t enable)
+{
+  if(enable) {
+    if(wf->lfo_x_cal_flag) {
+      if(lfo_input > wf->lfo_x_upper_limit) {
+        wf->lfo_x_upper_limit = lfo_input;
+      }
+      else if(lfo_input < wf->lfo_x_lower_limit) {
+        wf->lfo_x_lower_limit = lfo_input;
+      }
+    }
+    else {
+      wf->lfo_x_upper_limit = lfo_input;
+      wf->lfo_x_lower_limit = lfo_input;
+      wf->lfo_x_cal_flag = 1;
+    }
+  }
+  else {
+    wf->lfo_x_cal_flag = 0;
+  }
+}
+
+void lfo_y_cal_sequence(WAVEFORM *wf, uint32_t lfo_input, uint8_t enable)
+{
+  if(enable) {
+    if(wf->lfo_y_cal_flag) {
+      if(lfo_input > wf->lfo_y_upper_limit) {
+        wf->lfo_y_upper_limit = lfo_input;
+      }
+      else if(lfo_input < wf->lfo_y_lower_limit) {
+        wf->lfo_y_lower_limit = lfo_input;
+      }
+    }
+    else {
+      wf->lfo_y_upper_limit = lfo_input;
+      wf->lfo_y_lower_limit = lfo_input;
+      wf->lfo_y_cal_flag = 1;
+    }
+  }
+  else {
+    wf->lfo_y_cal_flag = 0;
+  }
 }
