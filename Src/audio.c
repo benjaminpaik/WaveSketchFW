@@ -78,7 +78,7 @@ void lfo_x_cal_sequence(WAVEFORM *wf, uint32_t lfo_input, uint8_t enable)
       }
     }
     else {
-      wf->lfo_x_upper_limit = lfo_input;
+      wf->lfo_x_upper_limit = lfo_input + 1;
       wf->lfo_x_lower_limit = lfo_input;
       wf->lfo_x_cal_flag = 1;
     }
@@ -100,7 +100,7 @@ void lfo_y_cal_sequence(WAVEFORM *wf, uint32_t lfo_input, uint8_t enable)
       }
     }
     else {
-      wf->lfo_y_upper_limit = lfo_input;
+      wf->lfo_y_upper_limit = lfo_input + 1;
       wf->lfo_y_lower_limit = lfo_input;
       wf->lfo_y_cal_flag = 1;
     }
