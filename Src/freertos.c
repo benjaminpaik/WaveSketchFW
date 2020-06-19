@@ -68,6 +68,7 @@ BUTTON right_button;
 EXP_CMD freq_cmd;
 uint32_t g_adc_inputs[5];
 LOWPASS note_filter;
+LOWPASS fine_filter;
 EXT_ADC ext_adc;
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
@@ -283,6 +284,7 @@ void PitchTask(void const * argument)
 //  uint16_t dac_value = 0;
 //  uint8_t dac_i2c_data[3] = {DAC_I2C_CONTROL, 0, 0};
   init_lowpass_filter(&note_filter, 20, ADC_SAMPLE_RATE);
+  init_lowpass_filter(&fine_filter, 1, ADC_SAMPLE_RATE);
   init_exp_cmd(&freq_cmd, FREQ_CONST_A, FREQ_BASE);
   init_ext_adc(&ext_adc, EXT_ADC_MUX_3, EXT_ADC_MUX_2);
   xLastWakeTime = xTaskGetTickCount();
@@ -293,10 +295,13 @@ void PitchTask(void const * argument)
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(20));
     read_ext_adc(&ext_adc);
 
+    lowpass_filter(&fine_filter, g_adc_inputs[ADC_FINE_INDEX]);
+
     // sum the pitch commands
     pitch_cmd = (CV_SCALAR * (float_t)ext_adc.results[ADC_CV_INDEX]) +
                 (COARSE_SCALAR * (float_t)ext_adc.results[ADC_COARSE_INDEX]) +
-                (FINE_SCALAR * (float_t)g_adc_inputs[ADC_FINE_INDEX]);
+                (FINE_SCALAR * fine_filter.out);
+
     lowpass_filter(&note_filter, pitch_cmd);
     exp_cmd(&freq_cmd, note_filter.out);
     update_frequency(&wf, freq_cmd.out);
@@ -400,7 +405,7 @@ void draw_sample(void)
 {
   // update the waveform
   wf.display[encoder_x.position] = encoder_y.position;
-  wf.audio[encoder_x.position] = AUDIO_SCALING(encoder_y.position);
+  update_audio_sample(&wf, AUDIO_SCALING(encoder_y.position), encoder_x.position);
   // clear the current and adjacent columns
   draw_vline(encoder_x.position, MAX_HEIGHT, 0, BLACK);
   draw_vline(encoder_x.position + 1, MAX_HEIGHT, 0, BLACK);
@@ -470,6 +475,7 @@ void load_waveform(uint16_t memory_bank)
   }
   preset_encoder(&encoder_x, 0);
   preset_encoder(&encoder_y, wf.display[0]);
+  calculate_deltas(&wf);
   draw_waveform();
 }
 /* USER CODE END Application */

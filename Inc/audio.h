@@ -15,12 +15,17 @@
 typedef struct {
   volatile int16_t display[SSD1306_LCDWIDTH];
   volatile int16_t audio[SSD1306_LCDWIDTH];
+  volatile int16_t delta[SSD1306_LCDWIDTH];
+  volatile int16_t sample;
 
-  volatile float cycle_time;
-  volatile float period;
+  volatile float_t cycle_time;
+  volatile float_t cycle_percent;
+  volatile float_t period;
+  volatile float_t piecewise_time;
+  volatile float_t slope;
 
-  int16_t num_samples;
   volatile int16_t index;
+  int16_t num_samples;
   int16_t selection;
 
   uint8_t lfo_x_cal_flag;
@@ -42,6 +47,8 @@ typedef struct {
 
 void init_waveform(WAVEFORM *wf, int16_t num_samples);
 void reset_waveform(WAVEFORM *wf, int16_t value);
+void update_audio_sample(WAVEFORM *wf, int16_t sample, int16_t index);
+void calculate_deltas(WAVEFORM *wf);
 void update_frequency(WAVEFORM *wf, float freq);
 void update_sample(WAVEFORM *wf);
 void select_waveform(WAVEFORM *wf, int16_t shift);

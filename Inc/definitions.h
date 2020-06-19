@@ -35,7 +35,7 @@
 #define ADC_COARSE_INDEX        3
 #define ADC_FINE_INDEX          4
 
-#define DAC_RATE                22001.0
+#define DAC_RATE                96000.0
 #define DAC_INTERVAL            (1.0 / DAC_RATE)
 #define DAC_I2C_WRITE           (0x98)
 #define DAC_I2C_CONTROL         (0x10)
