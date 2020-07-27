@@ -21,7 +21,9 @@ typedef struct {
   volatile float_t cycle_time;
   volatile float_t cycle_percent;
   volatile float_t period;
-  volatile float_t piecewise_time;
+  volatile float_t sample_time;
+  volatile float_t period_buffer;
+  volatile float_t sample_time_buffer;
   volatile float_t slope;
 
   volatile int16_t index;

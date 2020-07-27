@@ -17,7 +17,10 @@ void init_waveform(WAVEFORM *wf, int16_t num_samples)
   wf->selection = 0;
   wf->sample = 0;
   wf->slope = 0;
-  wf->piecewise_time = 1.0;
+  wf->sample_time = 1.0;
+
+  wf->period_buffer = 1.0;
+  wf->sample_time_buffer = 1.0;
 
   wf->lfo_x_upper_limit = LFO_INPUT_UPPER;
   wf->lfo_x_lower_limit = LFO_INPUT_LOWER;
@@ -61,22 +64,24 @@ void update_frequency(WAVEFORM *wf, float freq)
 {
   freq = LIMIT(freq, MAX_FREQUENCY, MIN_FREQUENCY);
   wf->period = 1.0 / freq;
-  wf->piecewise_time = wf->period / wf->num_samples;
+  wf->sample_time = wf->period / wf->num_samples;
 }
 
 void update_sample(WAVEFORM *wf)
 {
   // update cycle time
   wf->cycle_time += DAC_INTERVAL;
-  if(wf->cycle_time >= wf->period) {
-    wf->cycle_time -= wf->period;
+  if(wf->cycle_time >= wf->period_buffer) {
+    wf->cycle_time -= wf->period_buffer;
 //    wf->cycle_time = 0;
+    wf->period_buffer = wf->period;
+    wf->sample_time_buffer = wf->sample_time;
   }
   // update the sample index
-  wf->cycle_percent = wf->cycle_time / wf->period;
+  wf->cycle_percent = wf->cycle_time / wf->period_buffer;
   wf->index = (int16_t)(wf->cycle_percent * wf->num_samples);
-  wf->slope = wf->delta[wf->index] / wf->piecewise_time;
-  wf->sample = wf->audio[wf->index] + (wf->slope * (wf->cycle_time - (wf->piecewise_time * wf->index)));
+  wf->slope = wf->delta[wf->index] / wf->sample_time_buffer;
+  wf->sample = wf->audio[wf->index] + (wf->slope * (wf->cycle_time - (wf->sample_time_buffer * wf->index)));
 }
 
 void select_waveform(WAVEFORM *wf, int16_t shift)

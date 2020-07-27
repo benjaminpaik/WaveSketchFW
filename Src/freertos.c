@@ -78,7 +78,6 @@ osThreadId ledTaskHandle;
 osThreadId pitchTaskHandle;
 osThreadId buttonTaskHandle;
 osThreadId lfoControlTaskHandle;
-osSemaphoreId displaySemaphoreHandle;
 osSemaphoreId encoderSemaphoreHandle;
 
 /* Private function prototypes -----------------------------------------------*/
@@ -113,10 +112,6 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_MUTEX */
 
   /* Create the semaphores(s) */
-  /* definition and creation of displaySemaphore */
-  osSemaphoreDef(displaySemaphore);
-  displaySemaphoreHandle = osSemaphoreCreate(osSemaphore(displaySemaphore), 1);
-
   /* definition and creation of encoderSemaphore */
   osSemaphoreDef(encoderSemaphore);
   encoderSemaphoreHandle = osSemaphoreCreate(osSemaphore(encoderSemaphore), 1);
@@ -203,13 +198,9 @@ void DisplayTask(void const * argument)
 
   /* Infinite loop */
   for(;;) {
-    if(displaySemaphoreHandle != NULL) {
-      // block until the semaphore is available
-      if(xSemaphoreTake(displaySemaphoreHandle, portMAX_DELAY) == pdTRUE) {
-        // update the display
-        display();
-      }
-    }
+    // update the display
+    display();
+    vTaskDelay(pdMS_TO_TICKS(25));
   }
   /* USER CODE END DisplayTask */
 }
@@ -238,7 +229,6 @@ void EncoderTask(void const * argument)
     update_encoder(&encoder_x);
     update_encoder(&encoder_y);
     draw_sample();
-    xSemaphoreGive(displaySemaphoreHandle);
   }
   /* USER CODE END EncoderTask */
 }
@@ -393,7 +383,6 @@ void LfoControlTask(void const * argument)
         preset_encoder(&encoder_y, scale_lfo_y_input(&wf, g_adc_inputs[ADC_Y_INDEX]) * MAX_HEIGHT);
       }
       draw_sample();
-      xSemaphoreGive(displaySemaphoreHandle);
     }
   }
   /* USER CODE END LfoControlTask */
@@ -436,7 +425,6 @@ void draw_waveform(void)
   for(i = 1; i < SSD1306_LCDWIDTH; i++) {
     draw_vline(i, wf.display[i], wf.display[i - 1], WHITE);
   }
-  xSemaphoreGive(displaySemaphoreHandle);
 }
 
 void save_waveform(uint16_t memory_bank)
