@@ -16,20 +16,23 @@ typedef struct {
     uint16_t pin;
 
     uint8_t polarity;
-    uint16_t threshold;
+    uint16_t out_threshold;
     uint16_t count;
 
     uint8_t current;
     uint8_t previous;
     uint8_t out;
     uint8_t out_previous;
-    uint8_t press;
-    uint8_t release;
+
+    uint8_t out_rising;
+    uint8_t out_falling;
 
     uint16_t hold_threshold;
-    uint16_t hold_count;
     uint8_t hold;
     uint8_t hold_previous;
+
+    uint8_t hold_rising;
+    uint8_t hold_falling;
 } BUTTON;
 
 #define HOLD_DISABLED     3

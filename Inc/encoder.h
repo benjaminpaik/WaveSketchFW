@@ -33,6 +33,7 @@ typedef struct {
 #define ENCODER_SENSITIVITY     2
 
 void init_encoder(ENCODER *encoder, GPIO_TypeDef *port_a, uint16_t pin_a, GPIO_TypeDef *port_b, uint16_t pin_b, int16_t upper_limit, int16_t lower_limit);
+void update_sensitivity(ENCODER *encoder);
 void preset_encoder(ENCODER *encoder, int16_t position);
 void update_encoder(ENCODER *encoder);
 

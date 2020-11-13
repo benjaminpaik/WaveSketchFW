@@ -80,6 +80,7 @@ osThreadId buttonTaskHandle;
 osThreadId lfoControlTaskHandle;
 osSemaphoreId encoderSemaphoreHandle;
 
+
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 void draw_sample(void);
@@ -332,18 +333,25 @@ void ButtonTask(void const * argument)
     button_debouce(&left_button);
     button_debouce(&right_button);
 
-    if(right_button.release) {
+    if(right_button.hold_falling) {
       save_waveform(wf.selection);
     }
-    else if(left_button.release) {
+    else if(left_button.hold_falling) {
       reset_waveform(&wf, (SSD1306_LCDHEIGHT / 2));
       draw_waveform();
     }
-    else if(x_button.press) {
+    else if(right_button.out_falling) {
+
+    }
+    else if(left_button.out_falling) {
+      update_sensitivity(&encoder_x);
+      update_sensitivity(&encoder_y);
+    }
+    else if(x_button.out_rising) {
       select_waveform(&wf, -1);
       load_waveform(wf.selection);
     }
-    else if(y_button.press) {
+    else if(y_button.out_rising) {
       select_waveform(&wf, 1);
       load_waveform(wf.selection);
     }

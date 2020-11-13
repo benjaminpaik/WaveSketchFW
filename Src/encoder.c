@@ -24,6 +24,15 @@ void init_encoder(ENCODER *encoder, GPIO_TypeDef *port_a, uint16_t pin_a, GPIO_T
   encoder->sensitivity = ENCODER_SENSITIVITY;
 }
 
+void update_sensitivity(ENCODER *encoder)
+{
+  if(--encoder->sensitivity > ENCODER_SENSITIVITY) {
+    encoder->sensitivity = ENCODER_SENSITIVITY;
+  }
+  encoder->integrator_upper_limit = encoder->upper_limit << encoder->sensitivity;
+  encoder->integrator_lower_limit = encoder->lower_limit << encoder->sensitivity;
+}
+
 void preset_encoder(ENCODER *encoder, int16_t position)
 {
   encoder->position = LIMIT(position, encoder->upper_limit, encoder->lower_limit);
