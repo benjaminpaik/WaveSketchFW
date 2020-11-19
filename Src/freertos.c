@@ -80,7 +80,6 @@ osThreadId buttonTaskHandle;
 osThreadId lfoControlTaskHandle;
 osSemaphoreId encoderSemaphoreHandle;
 
-
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 void draw_sample(void);
