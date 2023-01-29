@@ -1,4 +1,4 @@
-# WaveSketch
+# WaveSketchFW
 
 Embedded software for an arbitrary function generator.
 

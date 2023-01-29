@@ -221,10 +221,10 @@ void EXTI15_10_IRQHandler(void)
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
   /* USER CODE END EXTI15_10_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_11);
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_14);
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
+  HAL_GPIO_EXTI_IRQHandler(ENCODER_Y1_Pin);
+  HAL_GPIO_EXTI_IRQHandler(ENCODER_Y2_Pin);
+  HAL_GPIO_EXTI_IRQHandler(ENCODER_X1_Pin);
+  HAL_GPIO_EXTI_IRQHandler(ENCODER_X2_Pin);
   /* USER CODE BEGIN EXTI15_10_IRQn 1 */
 
   xSemaphoreGiveFromISR(encoderSemaphoreHandle, &xHigherPriorityTaskWoken);
@@ -249,4 +249,3 @@ void DMA2_Stream0_IRQHandler(void)
 /* USER CODE BEGIN 1 */
 
 /* USER CODE END 1 */
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

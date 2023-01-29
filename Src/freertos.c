@@ -474,5 +474,3 @@ void load_waveform(uint16_t memory_bank)
   draw_waveform();
 }
 /* USER CODE END Application */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
